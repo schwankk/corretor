@@ -18,6 +18,7 @@ tx_juro          = 0
 multa            = 0
 vCET             = 0
 data_liberacao   = datetime.now()
+modalidade_amortizacao = ''
 
 ## Variaveis Detalhe
 parcela          = 0
@@ -33,12 +34,26 @@ valor_debito     = 0
 
 def importar_cabecalho(vArquivoTxt):    
     global titulo
+    global modalidade_amortizacao
     with open(vArquivoTxt, 'r') as arquivo:        
         vlinha = 1
         for linha in arquivo:                                    
             if vlinha <= 50:
                 if("Parcelas:" in linha):                
                     parcelas = int(linha[10:15].replace(" ",""))
+
+                if("Forma de Amortização:" in linha):
+                    if("SAC" in linha):
+                        modalidade_amortizacao = 'SAC'
+
+                    if("SPC" in linha):
+                        modalidade_amortizacao = 'SAC'
+
+                    if("SAV" in linha):
+                        modalidade_amortizacao = 'SAV'
+
+                    if("PRICE" in linha):
+                        modalidade_amortizacao = 'PRICE'
                     
                 if("Nome:" in linha):   
                     vnome     = linha.split(":")
@@ -105,10 +120,10 @@ def importar_cabecalho(vArquivoTxt):
     cursor.fetchall()
     db.commit()
 
-    vsql = 'INSERT INTO ficha_grafica(versao, associado, liberacao, nro_parcelas, parcela, situacao, titulo, tx_juro, multa, valor_financiado)\
-        VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+    vsql = 'INSERT INTO ficha_grafica(versao, associado, liberacao, nro_parcelas, parcela, situacao, titulo, tx_juro, multa, valor_financiado, modalidade_amortizacao)\
+        VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
     
-    parametros = ('cresol', str(associado), data_liberacao, parcelas, parcela, 'ATIVO', titulo, tx_juro, multa, valor_financiado)
+    parametros = ('cresol', str(associado), data_liberacao, parcelas, parcela, 'ATIVO', titulo, tx_juro, multa, valor_financiado, modalidade_amortizacao)
 
     cursor.execute(vsql, parametros)
     resultado = cursor.fetchall()

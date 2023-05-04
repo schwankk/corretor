@@ -179,6 +179,7 @@ def importaFichaGrafica(vCaminhoTxt):
     valor_financiado = 0
     liberacao        = datetime.now()    
     titulo           = ''
+    modalidade_amortizacao = ''
 
     with open(vCaminhoTxt, 'r') as reader:
         
@@ -188,7 +189,18 @@ def importaFichaGrafica(vCaminhoTxt):
         for linha in ficha_grafica:         
 
             if ("TITULO:" in linha and vlinha <= 5):
-                titulo = linha[122:134].replace(" ", "")
+                v_titulo = linha[122:134].replace(" ", "")
+                titulo = v_titulo[:-1]
+
+            if ("COMPOSICAO ...:" in linha and vlinha <= 10):
+                if("PRICE" in linha):
+                    modalidade_amortizacao = 'PRICE'
+
+                if("SAC" in linha):
+                    modalidade_amortizacao = 'SAC'
+
+                if("SAV" in linha):
+                    modalidade_amortizacao = 'SAV'
 
             if("TX JR NORMAL" in linha):
                 taxa_juro = pegaTxJuroLinha(linha)
@@ -218,11 +230,10 @@ def importaFichaGrafica(vCaminhoTxt):
     cursor.fetchall()
     db.commit()
 
-    vsql = 'INSERT INTO ficha_grafica(versao, associado, liberacao, nro_parcelas, parcela, situacao, titulo, tx_juro, valor_financiado)\
-        VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+    vsql = 'INSERT INTO ficha_grafica(versao, associado, liberacao, nro_parcelas, parcela, situacao, titulo, tx_juro, valor_financiado, modalidade_amortizacao)\
+        VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
     
-    parametros = ('sicredi', str(associado), liberacao, nro_parcelas, parcela, 'ATIVO', titulo, taxa_juro, valor_financiado)
-    
+    parametros = ('sicredi', str(associado), liberacao, nro_parcelas, parcela, 'ATIVO', titulo, taxa_juro, valor_financiado, modalidade_amortizacao)    
 
     cursor.execute(vsql, parametros)
     resultado = cursor.fetchall()

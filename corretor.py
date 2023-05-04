@@ -127,18 +127,11 @@ def main():
             if valores['arquivo'] != '':
                 caminho = valores['arquivo']
 
-                arquivo_selecionado = caminho.split('/')
-
-                print(arquivo_selecionado)
+                arquivo_selecionado = caminho.split('/')                
 
                 nome_arquivo  = arquivo_selecionado[-1][:-4]
                 formato       = arquivo_selecionado[-1].split('.')
-                tipo_arquivo  = formato[-1]
-
-                print('Nome arquivo: ' + nome_arquivo)
-                print('Formato: ' + tipo_arquivo)
-
-                #time.sleep(100)
+                tipo_arquivo  = formato[-1]                
 
                 path_destino  = vPath + '/Processados/' + nome_arquivo
 
@@ -159,41 +152,42 @@ def main():
                         versao = 'cresol'
                         titulo = cresol.importarCresol(arquivo_importar)
 
+                    db     = f.conexao()
+                    cursor = db.cursor()
+                    tipo = 'Correcao_Comum'                    
                     
-                    if versao == 'sicredi':
-                        print('consulta sicredi')
-
+                    if versao == 'sicredi':                        
                         ##Busca dados do cabeçalho no BD
-                        db     = f.conexao()
-                        cursor = db.cursor()
-                        sql_consulta = 'select * from ficha_grafica WHERE titulo = %s AND situacao = "ATIVO"'
-                        cursor.execute(sql_consulta, (titulo,))
-                        resultado = cursor.fetchall()
-
-                        print(resultado)
-
+                        
+                        #sql_consulta = 'select titulo,associado,nro_parcelas,parcela,valor_financiado,tx_juro,multa,liberacao from ficha_grafica WHERE titulo = %s AND situacao = "ATIVO"'
+                        #cursor.execute(sql_consulta, (titulo,))                                                                        
+                        sql_consulta = 'select titulo,associado,modalidade_amortizacao,nro_parcelas,parcela,valor_financiado,tx_juro,multa,liberacao from ficha_grafica WHERE situacao = "ATIVO"'
+                        cursor.execute(sql_consulta)                                                                        
+                        dados_cabecalho = cursor.fetchall()
+                                                                                                
                         ##busca detalhes do BD
                         ##Alimenta variaveis para relatorio
-
                     else:
-                        print('consulta cresol')
-
-                    template = DocxTemplate('C:/Temp/Fichas_Graficas/Template.docx')
-                    tipo = 'Correcao_Comum'
+                        sql_consulta = 'select titulo,associado,modalidade_amortizacao,nro_parcelas,parcela,valor_financiado,tx_juro,multa,liberacao from ficha_grafica WHERE titulo = %s AND situacao = "ATIVO"'
+                        cursor.execute(sql_consulta, (titulo,))                                                                        
+                        dados_cabecalho = cursor.fetchall()                                        
+                        
                     context = {
-                                "nome_associado" : "Andre do Teste",
-                                "tipo_correcao"  : tipo,
-                                "numero_titulo"  : "123456-7",
-                                "forma_calculo"  : "Parcelas Atualizadas Individualmente De 27/09/2013 a 11/04/2023 sem correção Multa de 2,0000 sobre o valor corrigido+juros principais+juros moratórios",
-                                "forma_juros"    : "Juros ok",
-                                "lancamentos"    : lancamentos
-                              }
+                                    "nome_associado" : dados_cabecalho[0][1],
+                                    "tipo_correcao"  : tipo,
+                                    "numero_titulo"  : dados_cabecalho[0][0],
+                                    "forma_calculo"  : "Parcelas Atualizadas Individualmente De 27/09/2013 a 11/04/2023 sem correção Multa de 2,0000 sobre o valor corrigido+juros principais+juros moratórios",
+                                    "forma_juros"    : "Juros ok",
+                                    "lancamentos"    : lancamentos
+                                  }
 
+                    ## Gera o relatório e transforma em .pdf
+                    template = DocxTemplate('C:/Temp/Fichas_Graficas/Template.docx')                    
                     template.render(context)
                     template.save(path_destino + '/' + tipo + '.docx')
                     convert(path_destino + '/' + tipo + '.docx', path_destino + '/' + tipo + '.pdf')
-
                     os.remove(path_destino + '/' + tipo + '.docx')
+                    
                 try:
                     if remove_arquivo:
                         os.remove(arquivo_importar)
@@ -202,7 +196,6 @@ def main():
 
                 sg.popup('Processo Finalizado')
                 
-
         if eventos == sg.WINDOW_CLOSED:
             break
         if eventos == 'Fechar':
